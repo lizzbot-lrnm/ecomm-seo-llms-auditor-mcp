@@ -1,0 +1,59 @@
+{
+  "title": "E-Commerce & Shopify JSON-LD Schema, AI Crawler robots.txt, Broken-Link & llms.txt Auditor Input",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "action": {
+      "title": "Audit Action",
+      "type": "string",
+      "description": "Select the full unified store/URL audit or an individual deterministic check.",
+      "default": "audit_url",
+      "prefill": "audit_url",
+      "enum": [
+        "audit_url",
+        "validate_jsonld",
+        "audit_ai_robots_txt",
+        "probe_shopify_products",
+        "generate_llms_txt",
+        "audit_links",
+        "health_and_provenance"
+      ]
+    },
+    "url": {
+      "title": "Store or Product Page URL / Domain",
+      "type": "string",
+      "description": "Target e-commerce store domain or product page URL to audit (e.g. https://www.allbirds.com).",
+      "default": "https://www.allbirds.com",
+      "prefill": "https://www.allbirds.com",
+      "editor": "textfield"
+    },
+    "urls": {
+      "title": "Batch Store URLs (Optional, up to 25)",
+      "type": "array",
+      "description": "Optional list of up to 25 e-commerce store or product URLs for batch auditing (charged_results_only=True).",
+      "default": [
+        "https://www.allbirds.com"
+      ],
+      "prefill": [
+        "https://www.allbirds.com"
+      ],
+      "editor": "stringList"
+    },
+    "max_links": {
+      "title": "Max Internal/Product Links to Check",
+      "type": "integer",
+      "description": "Maximum number of internal or product links to verify for 404s and redirect chains (1..50).",
+      "default": 25,
+      "prefill": 25,
+      "minimum": 1,
+      "maximum": 50
+    },
+    "generate_remediation_pack": {
+      "title": "Generate Remediation Pack (/llms.txt + Fixed Product JSON-LD)",
+      "type": "boolean",
+      "description": "Deterministically generate a ready-to-paste /llms.txt file and corrected Schema.org/Product JSON-LD snippet.",
+      "default": true
+    }
+  },
+  "required": []
+}

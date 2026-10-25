@@ -1,0 +1,15 @@
+{
+  "actorSpecification": 1,
+  "actorOutputSchemaVersion": 1,
+  "title": "E-Commerce JSON-LD, AI Crawler & llms.txt Audit Output",
+  "description": "Structured 0-100 readiness scores, JSON-LD validation, AI crawler permissions, broken links, and generated /llms.txt + corrected Product JSON-LD templates.",
+  "type": "object",
+  "properties": {
+    "results": {
+      "type": "string",
+      "title": "E-Commerce SEO & llms.txt Audit Results",
+      "description": "Dataset items returned by the e-commerce JSON-LD, AI crawler, and llms.txt readiness auditor.",
+      "template": "{{links.apiDefaultDatasetUrl}}/items"
+    }
+  }
+}

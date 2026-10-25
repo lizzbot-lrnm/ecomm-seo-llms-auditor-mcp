@@ -1,0 +1,167 @@
+{
+  "actorSpecification": 1,
+  "title": "E-Commerce SEO, JSON-LD & llms.txt Readiness Dataset",
+  "description": "Deterministic e-commerce technical SEO, Schema.org Product JSON-LD, AI crawler robots.txt, Shopify feed, and llms.txt audit records.",
+  "fields": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "title": "Status",
+        "description": "Execution status of the audit (ok, error, or quarantined_blocked).",
+        "example": "ok"
+      },
+      "url": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "title": "Audited URL",
+        "description": "Normalized URL audited."
+      },
+      "domain": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "title": "Domain",
+        "description": "Target hostname audited."
+      },
+      "platform": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "title": "Detected E-Commerce Platform",
+        "description": "Deterministically detected platform (shopify, woocommerce, custom, etc.)."
+      },
+      "overall_score": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "title": "Overall Readiness Score (0-100)",
+        "description": "Composite 0-100 technical SEO, JSON-LD, AI crawler, and llms.txt readiness score."
+      },
+      "quarantine_passed": {
+        "type": [
+          "boolean",
+          "null"
+        ],
+        "title": "Worf Quarantine Passed",
+        "description": "True when all fetched HTML/JSON/text responses passed Worf 0-token static quarantine."
+      },
+      "jsonld_audit": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "title": "JSON-LD Schema Audit",
+        "description": "Schema.org Product, Offer, Organization, and BreadcrumbList validation results and corrected JSON-LD."
+      },
+      "ai_robots_audit": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "title": "AI Crawler robots.txt Matrix",
+        "description": "Per-bot permissions for GPTBot, OAI-SearchBot, ChatGPT-User, ClaudeBot, PerplexityBot, Google-Extended, CCBot, Amazonbot, and Googlebot."
+      },
+      "shopify_audit": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "title": "Shopify /products.json Audit",
+        "description": "Deterministic Shopify feed analysis, SKU/variant completeness, missing alt-text count, and synthesized Product JSON-LD."
+      },
+      "llms_txt_audit": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "title": "llms.txt Validation & Generated File",
+        "description": "Existing /llms.txt check and deterministically synthesized standards-compliant /llms.txt."
+      },
+      "links_audit": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "title": "Broken Links & Redirect Chains Audit",
+        "description": "200 OK, 301/302 redirect chains, and 404/5xx dead links with SSRF protection."
+      },
+      "remediation_pack": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "title": "Remediation Pack",
+        "description": "Ready-to-paste /llms.txt, corrected Schema.org/Product JSON-LD, and broken-link remediation table."
+      }
+    },
+    "additionalProperties": true
+  },
+  "views": {
+    "overview": {
+      "title": "Overview",
+      "description": "Summary of e-commerce JSON-LD, AI crawler robots.txt, Shopify feed, and llms.txt readiness.",
+      "transformation": {
+        "fields": [
+          "status",
+          "url",
+          "domain",
+          "platform",
+          "overall_score",
+          "quarantine_passed",
+          "jsonld_audit",
+          "ai_robots_audit",
+          "shopify_audit",
+          "llms_txt_audit",
+          "links_audit",
+          "remediation_pack"
+        ]
+      },
+      "display": {
+        "component": "table",
+        "properties": {
+          "status": {
+            "label": "Status",
+            "format": "text"
+          },
+          "url": {
+            "label": "URL",
+            "format": "text"
+          },
+          "platform": {
+            "label": "Platform",
+            "format": "text"
+          },
+          "overall_score": {
+            "label": "Score (0-100)",
+            "format": "number"
+          },
+          "quarantine_passed": {
+            "label": "Quarantine Clean",
+            "format": "boolean"
+          },
+          "jsonld_audit": {
+            "label": "JSON-LD Audit",
+            "format": "object"
+          },
+          "ai_robots_audit": {
+            "label": "AI Crawlers",
+            "format": "object"
+          },
+          "remediation_pack": {
+            "label": "Remediation Pack",
+            "format": "object"
+          }
+        }
+      }
+    }
+  }
+}
