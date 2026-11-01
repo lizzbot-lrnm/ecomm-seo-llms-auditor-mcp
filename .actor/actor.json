@@ -3,7 +3,7 @@
   "name": "ecomm-seo-llms-auditor-mcp",
   "title": "E-Commerce JSON-LD, Broken-Link & llms.txt Auditor MCP",
   "description": "Deterministic 0-token e-commerce & Shopify technical SEO auditor: validates Schema.org Product/Offer JSON-LD against Google Merchant Center rules, audits AI crawler robots.txt permissions (GPTBot, ClaudeBot, OAI-SearchBot, PerplexityBot), probes Shopify /products.json feeds, checks broken links/redirect chains, and auto-generates ready-to-deploy /llms.txt + fixed JSON-LD snippets.",
-  "seoTitle": "Shopify & E-Commerce JSON-LD Schema, Broken Link & llms.txt ",
+  "seoTitle": "Shopify & E-Commerce JSON-LD Schema, Broken Link & llms.txt",
   "seoDescription": "Deterministic e-commerce & Shopify JSON-LD validator, AI crawler robots.txt auditor, broken-link scanner, and automatic /llms.txt generator.",
   "categories": [
     "ECOMMERCE",

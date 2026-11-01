@@ -66,7 +66,7 @@ def test_jsonld_product_validator_detects_missing_offer_fields() -> None:
     assert corrected["sku"]
     assert corrected["offers"]["price"] == "38.00"
     assert corrected["offers"]["priceCurrency"] == "USD"
-    assert "schema.org/InStock" in corrected["offers"]["availability"]
+    assert corrected["offers"]["availability"] == "REPLACE_WITH_REAL_AVAILABILITY"
 
     # Re-validating the emitted corrected_jsonld_script must pass 100% cleanly
     recheck = validate_jsonld_html(res["corrected_jsonld_script"], page_url="https://store.example.com/products/barrier-cream")

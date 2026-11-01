@@ -11,6 +11,7 @@ from __future__ import annotations
 import concurrent.futures
 import html as html_lib
 import importlib.util
+import http.client
 import ipaddress
 import json
 import pathlib
@@ -23,7 +24,7 @@ from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 ENGINE_VERSION = "0.1.0"
-USER_AGENT = "TechnoPlusIT-EcommSeoLlmsAuditor/0.1 (+https://parish.technoplusit.co.uk/seo-audit)"
+USER_AGENT = "EcommSeoLlmsAuditor/0.1"
 MAX_CONCURRENT_LINK_CHECKS = 8
 MAX_LINKS_CAP = 50
 
@@ -109,6 +110,8 @@ def is_ssrf_blocked_ip(ip_str: str) -> bool:
         return True
     if isinstance(ip, ipaddress.IPv6Address):
         mapped = ip.ipv4_mapped or ip.sixtofour
+        if mapped is None and int(ip) >> 32 == 0:
+            mapped = ipaddress.IPv4Address(int(ip) & 0xFFFFFFFF)  # IPv4-compatible ::/96
         if mapped is not None and is_ssrf_blocked_ip(str(mapped)):
             return True
     if (
@@ -165,6 +168,11 @@ def is_ssrf_blocked_url(
     if host.isdigit():
         return True, f"SSRF_BLOCKED_NUMERIC_HOST:{host}"
 
+    try:
+        _ = parsed.port
+    except ValueError:
+        return True, "INVALID_PORT"
+
     if resolve_dns and not is_ip_literal:
         try:
             port = parsed.port or (443 if parsed.scheme.lower() == "https" else 80)
@@ -175,7 +183,7 @@ def is_ssrf_blocked_url(
                 sockaddr = info[4]
                 if sockaddr and is_ssrf_blocked_ip(str(sockaddr[0])):
                     return True, f"SSRF_BLOCKED_RESOLVED_IP:{sockaddr[0]}"
-        except socket.gaierror:
+        except (socket.gaierror, UnicodeError, ValueError):
             if fail_on_dns_error:
                 return True, f"DNS_RESOLUTION_FAILED:{host}"
 
@@ -318,23 +326,23 @@ def _validate_product_node(product: Dict[str, Any], page_url: str = "https://exa
     fixed_offer: Dict[str, Any] = {
         "@type": "Offer",
         "url": str((offer_dict or {}).get("url") or page_url),
-        "price": str((offer_dict or {}).get("price") or (offer_dict or {}).get("lowPrice") or "49.00"),
+        "price": str((offer_dict or {}).get("price") or (offer_dict or {}).get("lowPrice") or "REPLACE_WITH_REAL_PRICE"),
         "priceCurrency": str((offer_dict or {}).get("priceCurrency") or "USD"),
-        "availability": str((offer_dict or {}).get("availability") or "https://schema.org/InStock"),
-        "itemCondition": str((offer_dict or {}).get("itemCondition") or "https://schema.org/NewCondition"),
+        "availability": str((offer_dict or {}).get("availability") or "REPLACE_WITH_REAL_AVAILABILITY"),
+        "itemCondition": str((offer_dict or {}).get("itemCondition") or "REPLACE_WITH_REAL_CONDITION"),
     }
 
     corrected: Dict[str, Any] = {
         "@context": "https://schema.org",
         "@type": "Product",
-        "name": str(name).strip() if name and str(name).strip() else "Featured Store Product",
-        "image": image if image else [f"{page_url.rstrip('/')}/assets/product-primary.jpg"],
+        "name": str(name).strip() if name and str(name).strip() else "REPLACE_WITH_PRODUCT_NAME",
+        "image": image if image else ["REPLACE_WITH_PRODUCT_IMAGE_URL"],
         "description": (
             str(description).strip()
             if description and str(description).strip()
-            else "Official product listing with verified Google Merchant Center structured data."
+            else "REPLACE_WITH_PRODUCT_DESCRIPTION"
         ),
-        "sku": str(sku).strip() if sku and str(sku).strip() else "SKU-PRIMARY-001",
+        "sku": str(sku).strip() if sku and str(sku).strip() else "REPLACE_WITH_REAL_SKU",
         "brand": brand_obj,
         "offers": fixed_offer,
     }
@@ -689,7 +697,7 @@ def analyze_shopify_products_json(
         prod_url = f"{store_url.rstrip('/')}/products/{handle}"
         vendor = str(p0.get("vendor") or "Shopify Store").strip()
         sku_val = str(v0.get("sku") or f"SHOP-{p0.get('id') or '001'}").strip()
-        price_str = str(v0.get("price") or (f"{min(prices):.2f}" if prices else "49.00"))
+        price_str = str(v0.get("price") or (f"{min(prices):.2f}" if prices else "REPLACE_WITH_REAL_PRICE"))
         avail_bool = v0.get("available", True)
 
         generated_product_jsonld = {
@@ -832,7 +840,7 @@ def validate_or_generate_llms_txt(
         )
         variants = prod.get("variants") if isinstance(prod.get("variants"), list) else []
         v0 = variants[0] if variants and isinstance(variants[0], dict) else {}
-        price = str(v0.get("price") or prod.get("price") or "49.00")
+        price = str(v0.get("price") or prod.get("price") or "REPLACE_WITH_REAL_PRICE")
         sku = str(v0.get("sku") or prod.get("sku") or "SKU-001")
         product_lines.append(f"- [{p_title}]({p_url}): ${price} USD (SKU: `{sku}`)")
 
@@ -870,6 +878,41 @@ class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
         return None
 
 
+class _PeerGuardMixin:
+    """Validate the actually-connected peer IP at socket-connect time (defeats DNS rebinding TOCTOU)."""
+
+    def connect(self) -> None:  # type: ignore[override]
+        super().connect()  # type: ignore[misc]
+        peer = self.sock.getpeername()[0] if self.sock else ""
+        if not peer or is_ssrf_blocked_ip(str(peer)):
+            try:
+                self.sock.close()
+            finally:
+                raise ValueError(f"SSRF_BLOCKED_CONNECTED_PEER:{peer}")
+
+
+class _GuardedHTTPConnection(_PeerGuardMixin, http.client.HTTPConnection):
+    pass
+
+
+class _GuardedHTTPSConnection(_PeerGuardMixin, http.client.HTTPSConnection):
+    pass
+
+
+class _GuardedHTTPHandler(urllib.request.HTTPHandler):
+    def http_open(self, req: Any) -> Any:
+        return self.do_open(_GuardedHTTPConnection, req)
+
+
+class _GuardedHTTPSHandler(urllib.request.HTTPSHandler):
+    def https_open(self, req: Any) -> Any:
+        return self.do_open(_GuardedHTTPSConnection, req, context=self._context)
+
+
+def _guarded_opener() -> Any:
+    return urllib.request.build_opener(_GuardedHTTPHandler, _GuardedHTTPSHandler, _NoRedirectHandler)
+
+
 def _default_single_hop_fetcher(url: str, timeout: float = 5.0) -> Tuple[int, Dict[str, str]]:
     """
     Perform a single non-redirecting HEAD request (falling back to ranged GET on 403/405)
@@ -879,7 +922,7 @@ def _default_single_hop_fetcher(url: str, timeout: float = 5.0) -> Tuple[int, Di
     if blocked:
         raise ValueError(f"SSRF_BLOCKED:{reason}")
 
-    opener = urllib.request.build_opener(_NoRedirectHandler)
+    opener = _guarded_opener()
     for method, extra_headers in [("HEAD", {}), ("GET", {"Range": "bytes=0-0"})]:
         req = urllib.request.Request(
             url,
@@ -1094,7 +1137,7 @@ def _live_fetch_with_ssrf_guarded_redirects(target_u: str, max_redirects: int = 
     Fetch a URL over HTTP/HTTPS with automatic redirects DISABLED, validating every hop
     against `is_ssrf_blocked_url(..., resolve_dns=True, fail_on_dns_error=True)` before connecting.
     """
-    opener = urllib.request.build_opener(_NoRedirectHandler)
+    opener = _guarded_opener()
     curr_u = target_u
     for _ in range(max_redirects + 1):
         blocked, reason = is_ssrf_blocked_url(curr_u, resolve_dns=True, fail_on_dns_error=True)
