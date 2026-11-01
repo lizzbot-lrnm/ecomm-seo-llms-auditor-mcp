@@ -107,6 +107,10 @@ def is_ssrf_blocked_ip(ip_str: str) -> bool:
         ip = ipaddress.ip_address(raw)
     except ValueError:
         return True
+    if isinstance(ip, ipaddress.IPv6Address):
+        mapped = ip.ipv4_mapped or ip.sixtofour
+        if mapped is not None and is_ssrf_blocked_ip(str(mapped)):
+            return True
     if (
         ip.is_private
         or ip.is_loopback

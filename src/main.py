@@ -53,7 +53,7 @@ async def main() -> None:
                 await Actor.push_data({k: v for k, v in item.items() if v is not None})
 
             await Actor.set_value("OUTPUT", items[0] if len(items) == 1 else items)
-            if items and items[0].get("remediation_pack", {}).get("generated_llms_txt"):
+            if items and isinstance(items[0], dict) and (items[0].get("remediation_pack") or {}).get("generated_llms_txt"):
                 await Actor.set_value(
                     "llms.txt",
                     items[0]["remediation_pack"]["generated_llms_txt"],
